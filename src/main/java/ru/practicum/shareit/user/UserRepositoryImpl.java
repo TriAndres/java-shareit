@@ -9,6 +9,7 @@ import java.util.Map;
 @Repository
 public class UserRepositoryImpl implements UserRepository {
     private final Map<Long, User> users = new HashMap<>();
+
     @Override
     public Collection<User> findAll() {
         return users.values();
@@ -23,12 +24,12 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User findById(Long userId) {
-        return null;
+        return users.get(userId);
     }
 
     @Override
     public void deleteById(Long userId) {
-
+        users.remove(userId);
     }
 
     private long getId() {

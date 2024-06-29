@@ -3,8 +3,6 @@ package ru.practicum.shareit.user;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exseption.EmailConflictExceptin;
-import ru.practicum.shareit.exseption.UserValidationException;
 import ru.practicum.shareit.user.UserDto.UserDto;
 import ru.practicum.shareit.user.UserDto.UserMapper;
 
@@ -29,10 +27,9 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserDto userDto) {
         if (userDto.getEmail() == null) {
             log.warn("Email must not be null");
-            throw new UserValidationException("Email must not be null");
+            throw new RuntimeException("Email must not be null");
         }
         User user = userRepository.save(UserMapper.toUser(userDto));
-        log.info("Created user: {}", user);
         return UserMapper.toUserDto(user);
     }
 
@@ -51,8 +48,7 @@ public class UserServiceImpl implements UserService {
         if (updated) {
             return UserMapper.toUserDto(userRepository.save(oldUser));
         }
-        log.warn("update of user with id {} failed", userId);
-        throw new EmailConflictExceptin("Unable to update user with given email");
+        throw new RuntimeException("Unable to update user with given email");
     }
 
     @Override

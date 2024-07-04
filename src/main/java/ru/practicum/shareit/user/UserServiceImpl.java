@@ -1,64 +1,52 @@
 package ru.practicum.shareit.user;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.config.ConfigDataException;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.user.UserDto.UserDto;
-import ru.practicum.shareit.user.UserDto.UserMapper;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
+import ru.practicum.shareit.user.model.User;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 @Service
-@Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    @Override
+    public UserDto create(UserDto userDto) throws ConfigDataException {
+        User user = UserMapper.toUser(userDto);
+        return UserMapper.toDto(userRepository.create(user));
     }
 
     @Override
-    public List<UserDto> getAllUsers() {
-        return UserMapper.mapToUserDto(userRepository.findAll());
+    public UserDto update(UserDto userDto, Long id) throws ConfigDataException {
+        User user = UserMapper.toUser(userDto);
+        user.setId(id);
+        return UserMapper.toDto(userRepository.update(user, id));
     }
 
     @Override
-    public UserDto create(UserDto userDto) {
-        if (userDto.getEmail() == null) {
-            log.warn("Email must not be null");
-            throw new RuntimeException("Email must not be null");
+    public List<UserDto> findAllUsers() {
+        Collection<User> list = userRepository.findAllUsers();
+        List<UserDto> listDto = new ArrayList<>();
+        for (User user : list) {
+            listDto.add(UserMapper.toDto(user));
         }
-        User user = userRepository.save(UserMapper.toUser(userDto));
-        return UserMapper.toUserDto(user);
+        return listDto;
+    }
+
+
+    @Override
+    public UserDto findUserById(Long id) {
+        return UserMapper.toDto(userRepository.getUser(id));
     }
 
     @Override
-    public UserDto update(UserDto userDto, Long userId) {
-        User oldUser = UserMapper.toUser(findById(userId));
-        boolean updated = false;
-        if (userDto.getEmail() != null || !Objects.equals(null, oldUser.getEmail())) {
-            oldUser.setEmail(userDto.getEmail());
-            updated = true;
-        }
-        if (userDto.getName() != null) {
-            oldUser.setName(userDto.getName());
-            updated = true;
-        }
-        if (updated) {
-            return UserMapper.toUserDto(userRepository.save(oldUser));
-        }
-        throw new RuntimeException("Unable to update user with given email");
-    }
-
-    @Override
-    public UserDto findById(Long userId) {
-        return UserMapper.toUserDto(userRepository.findById(userId));
-    }
-
-    @Override
-    public void delete(Long userId) {
-        userRepository.deleteById(userId);
+    public UserDto delete(Long id) {
+        return UserMapper.toDto(userRepository.getUser(id));
     }
 }

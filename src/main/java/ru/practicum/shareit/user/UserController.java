@@ -1,46 +1,45 @@
 package ru.practicum.shareit.user;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.user.UserDto.UserDto;
-
-import java.util.List;
+import ru.practicum.shareit.exseption.ConflictException;
+import ru.practicum.shareit.user.dto.UserDto;
 
 /**
  * TODO Sprint add-controllers.
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping(path = "/users")
 public class UserController {
     private final UserService userService;
 
-    @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
-    @GetMapping
-    public List<UserDto> getAllUsers() {
-        return userService.getAllUsers();
-    }
-
     @PostMapping
-    public UserDto create(@RequestBody UserDto userDto) {
-        return userService.create(userDto);
+    public ResponseEntity<?> create(@Valid @RequestBody UserDto userDto) throws ConflictException {
+        return new ResponseEntity<>(userService.create(userDto), HttpStatus.CREATED);
     }
 
     @PatchMapping(value = "/{userId}")
-    public UserDto update(@RequestBody UserDto userDto, @PathVariable Long userId) {
-        return userService.update(userDto, userId);
+    public ResponseEntity<?> update(@PathVariable("id") @Min(1) Long id, @RequestBody UserDto userDto) throws ConflictException {
+        return new ResponseEntity<>(userService.update(userDto, id), HttpStatus.OK);
     }
 
-    @GetMapping("/{userId}")
-    public UserDto findById(@PathVariable Long userId) {
-        return userService.findById(userId);
+    @GetMapping
+    public ResponseEntity<?> findAllUsers() {
+        return new ResponseEntity<>(userService.findAllUsers(), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{userId}")
-    public void delete(@PathVariable Long userId) {
-        userService.delete(userId);
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findUserById(@PathVariable("id") @Min(1) Long id) {
+        return new ResponseEntity<>(userService.findUserById(id), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
+        return new ResponseEntity<>(userService.delete(id), HttpStatus.OK);
     }
 }

@@ -7,7 +7,6 @@ import java.util.*;
 
 @Repository
 public class ItemRepositoryImpl implements ItemRepository {
-
     private final Map<Long, Item> items = new HashMap<>();
     private Long id = 0L;
 
@@ -21,7 +20,7 @@ public class ItemRepositoryImpl implements ItemRepository {
     @Override
     public Item update(Long itemId, Item item1) {
         Item item = items.get(itemId);
-        if (item1.getAvailable() != null ) {
+        if (item1.getAvailable() != null) {
             item.setAvailable(item1.getAvailable());
         }
         if (item1.getName() != null && Objects.equals(item1.getName(), "")) {

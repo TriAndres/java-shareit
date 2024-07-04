@@ -47,8 +47,9 @@ public class UserRepositoryImpl implements UserRepository {
             }
             return user1;
         }
-        throw  new ConflictException("пользователь с таким идентификатором не найден");
+        throw new ConflictException("пользователь с таким идентификатором не найден");
     }
+
     @Override
     public Collection<User> findAllUsers() {
         return users.values();

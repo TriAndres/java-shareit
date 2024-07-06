@@ -1,7 +1,6 @@
 package ru.practicum.shareit.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.config.ConfigDataException;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
@@ -17,13 +16,13 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDto create(UserDto userDto) throws ConfigDataException {
+    public UserDto create(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
         return UserMapper.toDto(userRepository.create(user));
     }
 
     @Override
-    public UserDto update(UserDto userDto, Long id) throws ConfigDataException {
+    public UserDto update(UserDto userDto, Long id) {
         User user = UserMapper.toUser(userDto);
         user.setId(id);
         return UserMapper.toDto(userRepository.update(user, id));
@@ -46,7 +45,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto delete(Long id) {
-        return UserMapper.toDto(userRepository.getUser(id));
+    public void delete(Long id) {
+        userRepository.getUser(id);
     }
 }

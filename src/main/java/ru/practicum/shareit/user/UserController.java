@@ -19,12 +19,12 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody UserDto userDto) throws ConflictException {
+    public ResponseEntity<?> create(@Valid @RequestBody UserDto userDto) {
         return new ResponseEntity<>(userService.create(userDto), HttpStatus.CREATED);
     }
 
-    @PatchMapping(value = "/{userId}")
-    public ResponseEntity<?> update(@PathVariable("id") @Min(1) Long id, @RequestBody UserDto userDto) throws ConflictException {
+    @PatchMapping(value = "/{id}")
+    public ResponseEntity<?> update(@PathVariable("id") @Min(1) Long id, @RequestBody UserDto userDto) {
         return new ResponseEntity<>(userService.update(userDto, id), HttpStatus.OK);
     }
 
@@ -39,7 +39,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
-        return new ResponseEntity<>(userService.delete(id), HttpStatus.OK);
+    public ResponseEntity<?> delete(@PathVariable("id") @Min(1) Long id) {
+        userService.delete(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

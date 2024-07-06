@@ -65,11 +65,9 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User delete(Long id) {
+    public void delete(Long id) {
         if (users.containsKey(id)) {
-            User user = users.get(id);
             users.remove(id);
-            return user;
         }
         throw new ConflictException("пользователь с таким идентификатором не найден");
     }

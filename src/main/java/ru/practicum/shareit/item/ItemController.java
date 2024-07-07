@@ -28,6 +28,7 @@ public class ItemController {
         log.info("поступил запрос на добавление вещи: {} пользователем: {}", itemDto, userId);
         return new ResponseEntity<>(itemService.createItem(itemDto, userId), HttpStatus.CREATED);
     }
+
     // только для владельца
     @PatchMapping("/{itemId}")
     public ResponseEntity<?> updateItem(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId, @PathVariable Long itemId,
@@ -35,18 +36,21 @@ public class ItemController {
         log.info("поступил запрос на редактирование вещи: {} владельцем: {}", itemDto, userId);
         return new ResponseEntity<>(itemService.updateItem(userId, itemId, itemDto), HttpStatus.OK);
     }
+
     // для любого пользователя
     @GetMapping("/{itemId}")
     public ResponseEntity<?> getItemOfId(@RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long itemId) {
         log.info("поступил запрос на просмотр вещи по идентификатору: {}", itemId);
         return new ResponseEntity<>(itemService.getItemOfId(userId, itemId), HttpStatus.OK);
     }
+
     // только для владельца
     @GetMapping()
     public ResponseEntity<?> getItems(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId) {
-        log.info("поступил запрос на просмотр владельцем всех своих вещей,idUser: {}",userId);
+        log.info("поступил запрос на просмотр владельцем всех своих вещей,idUser: {}", userId);
         return new ResponseEntity<>(itemService.getItems(userId), HttpStatus.OK);
     }
+
     // только доступные для аренды вещи
     @GetMapping("/search")
     public ResponseEntity<?> getItemOfText(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId,

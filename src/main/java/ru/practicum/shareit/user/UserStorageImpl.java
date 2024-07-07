@@ -9,7 +9,7 @@ import java.util.*;
 public class UserStorageImpl implements UserStorage {
 
     private Long id = 0L;
-    private Map<Long, User> users = new HashMap<>();
+    private final Map<Long, User> users = new HashMap<>();
 
     private Long createId() {
         return ++id;

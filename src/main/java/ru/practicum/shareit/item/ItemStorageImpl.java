@@ -15,7 +15,7 @@ public class ItemStorageImpl implements ItemStorage {
 
     @Override
     public Item createItem(Item item) {
-        log.info("создание вещи:" + item);
+        log.info("создание вещи: {}", item);
         item.setId(createId());
         items.put(item.getId(), item);
         return item;

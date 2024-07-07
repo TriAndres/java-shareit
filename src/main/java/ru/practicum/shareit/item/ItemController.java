@@ -25,37 +25,33 @@ public class ItemController {
     @PostMapping()
     public ResponseEntity<?> createItem(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId,
                                         @RequestBody ItemDto itemDto) {
-        log.info("поступил запрос на добавление вещи:" + itemDto + " пользователем:" + userId);
+        log.info("поступил запрос на добавление вещи: {} пользователем: {}", itemDto, userId);
         return new ResponseEntity<>(itemService.createItem(itemDto, userId), HttpStatus.CREATED);
     }
-
     // только для владельца
     @PatchMapping("/{itemId}")
     public ResponseEntity<?> updateItem(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId, @PathVariable Long itemId,
                                         @RequestBody ItemDto itemDto) {
-        log.info("поступил запрос на редактирование вещи:" + itemDto + " владельцем:" + userId);
+        log.info("поступил запрос на редактирование вещи: {} владельцем: {}", itemDto, userId);
         return new ResponseEntity<>(itemService.updateItem(userId, itemId, itemDto), HttpStatus.OK);
     }
-
     // для любого пользователя
     @GetMapping("/{itemId}")
     public ResponseEntity<?> getItemOfId(@RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long itemId) {
-        log.info("поступил запрос на просмотр вещи по идентификатору:" + itemId);
+        log.info("поступил запрос на просмотр вещи по идентификатору: {}", itemId);
         return new ResponseEntity<>(itemService.getItemOfId(userId, itemId), HttpStatus.OK);
     }
-
     // только для владельца
     @GetMapping()
     public ResponseEntity<?> getItems(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId) {
-        log.info("поступил запрос на просмотр владельцем всех своих вещей,idUser=" + userId);
+        log.info("поступил запрос на просмотр владельцем всех своих вещей,idUser: {}",userId);
         return new ResponseEntity<>(itemService.getItems(userId), HttpStatus.OK);
     }
-
     // только доступные для аренды вещи
     @GetMapping("/search")
     public ResponseEntity<?> getItemOfText(@RequestHeader("X-Sharer-User-Id") Optional<Long> userId,
                                            @RequestParam("text") String text) {
-        log.info("поступил запрос на просмотр доступной для аренды вещи:" + text);
+        log.info("поступил запрос на просмотр доступной для аренды вещи: {}", text);
         return new ResponseEntity<>(itemService.getItemOfText(userId, text), HttpStatus.OK);
     }
 }

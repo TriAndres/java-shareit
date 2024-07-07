@@ -40,7 +40,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     public Boolean checkName(String name) {
-        if (name != null && !name.equals("")) {
+        if (name != null && !name.isEmpty()) {
             return true;
         }
         throw new RuntimeException("имя не должно быть пустым");
@@ -57,7 +57,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto updateItem(Optional<Long> userId, Long itemId, ItemDto itemDto) {
         if (userId.isPresent() && userId.get() > 0) {
             Item item = mapper.toItem(itemDto);
-            log.info("вещь для редактирования:" + item);
+            log.info("вещь для редактирования: {}", item);
             if (itemStorage.getItemOfId(itemId).getUserId().equals(userId.get())) {
                 return mapper.toItemDto(itemStorage.updateItem(itemId, item));
             }
@@ -70,7 +70,7 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> getItems(Optional<Long> userId) {
         if (userId.isPresent() && userId.get() > 0) {
             List<Item> its = itemStorage.getItems(userId.get());
-            log.info("вещи пользователя:" + userId + its);
+            log.info("вещи пользователя: {} {}", userId, its);
             List<ItemDto> list = new ArrayList<>();
             for (Item item : its) {
                 list.add(mapper.toItemDto(item));
@@ -91,7 +91,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getItemOfText(Optional<Long> userId, String text) {
         if (userId.isPresent() && userId.get() > 0) {
-            if (text == null || text.length() == 0) return new ArrayList<>();
+            if (text == null || text.isEmpty()) return new ArrayList<>();
             List<Item> its = itemStorage.getItemOfText(text);
             List<ItemDto> list = new ArrayList<>();
             for (Item item : its) {

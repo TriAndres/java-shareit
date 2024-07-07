@@ -7,9 +7,8 @@ import lombok.Data;
 @Builder
 @Data
 public class UserDto {
-
     private Long id;
     private String name;
-    @Email(message = "Incorrect email")
+    @Email(message = "Некорректно ввели email")
     private String email;
 }

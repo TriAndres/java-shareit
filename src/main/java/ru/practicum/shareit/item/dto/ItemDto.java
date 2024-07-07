@@ -1,7 +1,10 @@
 package ru.practicum.shareit.item.dto;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
@@ -13,15 +16,14 @@ import ru.practicum.shareit.user.model.User;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ItemDto {
-
     private Long id;
-    @NotNull
+    @NotBlank
     private String name;
-    @NotNull
+    @NotBlank
     private String description;
-    @NotNull
     private Boolean available;
-    private User ownerId;
+    private Long idUser;
+    private User owner;
     private ItemRequest request;
 
     public ItemDto(Long id, String name, String description, Boolean available) {

@@ -4,15 +4,14 @@ import ru.practicum.shareit.item.model.Item;
 
 import java.util.List;
 
-public interface ItemRepository {
-
-    Item create(Item item);
-
-    Item update(Long itemId, Item item);
+public interface ItemStorage {
+    Item createItem(Item item);
 
     Item getItemOfId(Long itemId);
 
-    List<Item> getItems(Long aLong);
+    Item updateItem(Long itemId, Item item);
+
+    List<Item> getItems(Long userId);
 
     List<Item> getItemOfText(String text);
 }

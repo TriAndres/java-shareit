@@ -14,8 +14,9 @@ public class ItemMapper {
                 item.getAvailable()
         );
     }
+
     public Item toItem(ItemDto itemDto) {
-        return new Item (
+        return new Item(
                 itemDto.getName(),
                 itemDto.getDescription(),
                 itemDto.getAvailable()

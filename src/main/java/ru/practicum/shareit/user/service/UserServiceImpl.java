@@ -3,63 +3,66 @@ package ru.practicum.shareit.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.EmptyFieldException;
+import ru.practicum.shareit.exception.EntityNotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.mapper.UserMapper;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.util.Collection;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.user.dto.mapper.UserMapper.*;
 
-@Slf4j
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
 
     @Override
-    public Collection<UserDto> getAllUsers() {
-        log.info("getAllUsers");
-        return userRepository.getAllUsers().stream()
+    public UserDto create(UserDto userDto) {
+        if (userDto.getEmail() == null) {
+            throw new EmptyFieldException("Email is empty");
+        }
+        log.debug("Creating user : {}", userDto);
+        return toUserDto(userRepository.create(toUser(userDto)));
+    }
+
+    @Override
+    public UserDto getById(long id) {
+        checkingId(id);
+        log.debug("Getting user by Id: {}", id);
+        return toUserDto(userRepository.getById(id));
+    }
+
+    @Override
+    public Collection<UserDto> getAll() {
+        log.debug("Getting all users");
+        return userRepository.getAll().stream()
                 .map(UserMapper::toUserDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserDto getUserById(Long id) {
-        checkingId(id);
-        log.info("getUserById: {}",id);
-        return toUserDto(userRepository.getUserById(id));
-    }
-
-    @Override
-    public UserDto createUser(UserDto userDto) {
-        if (userDto.getEmail() == null) {
-            throw new RuntimeException("Email id empty");
-        }
-        log.info("createUser: {}",userDto);
-        return toUserDto(userRepository.createUser(toUser(userDto)));
-    }
-
-    @Override
-    public UserDto updateUser(UserDto userDto) {
+    public UserDto update(UserDto userDto) {
         checkingId(userDto.getId());
-        log.info("updateUser: {}",userDto);
+        log.debug("Updating user: {}", userDto);
         return toUserDto(userRepository
-                .updateUser(toUserUpdate(userDto, userRepository.getUserById(userDto.getId()))));
+                .update(toUserUpdate(userDto, userRepository.getById(userDto.getId()))));
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public void delete(long id) {
         checkingId(id);
-        log.info("deleteUser: {}",id);
-        userRepository.deleteUser(id);
+        log.debug("Deleting user by id: {}", id);
+        userRepository.delete(id);
     }
 
-    private void checkingId(Long id) {
-        if (userRepository.getUserById(id) == null) {
-            throw new RuntimeException("Нет пользователя с идентификатором: " + id);
+    private void checkingId(long id) {
+        if (userRepository.getById(id) == null) {
+            throw new EntityNotFoundException("There is no User with id: " + id);
         }
     }
 }

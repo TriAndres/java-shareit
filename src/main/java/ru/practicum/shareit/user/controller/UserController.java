@@ -23,6 +23,11 @@ public class UserController {
         return userService.getAllUsers();
     }
 
+//    @GetMapping()
+//    public ResponseEntity<?> getAllUsers() {
+//        return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+//    }
+
     @GetMapping("/{userId}")
     public UserDto getUserById(@PathVariable("userId") Long userId) {
         return userService.getUserById(userId);

@@ -11,7 +11,6 @@ import java.util.*;
 public class UserRepositoryImpl implements UserRepository {
 
     private final Map<Long, User> users = new HashMap<>();
-    private final Set<String> emailsSet = new HashSet<>();
 
     @Override
     public Collection<User> getAllUsers() {
@@ -28,20 +27,20 @@ public class UserRepositoryImpl implements UserRepository {
     public User createUser(User user) {
         Collection<User> listUser = users.values();
         if (listUser.stream()
-                .anyMatch(s -> s.getName().equals(user.getName()))) {
+                .anyMatch(s -> s.getEmail().equals(user.getEmail()))) {
             throw new IllegalArgumentException("адрес почты уже занят");
         }
         log.info("createUser: {}", user);
         user.setId(getId());
         users.put(user.getId(), user);
-        return null;
+        return user;
     }
 
     @Override
     public User updateUser(User user) {
         Collection<User> listUser = users.values();
         if (listUser.stream()
-                .anyMatch(s -> s.getName().equals(user.getName()))) {
+                .anyMatch(s -> s.getEmail().equals(user.getEmail()))) {
             throw new IllegalArgumentException("адрес почты уже занят");
         }
         log.debug("updateUser id: {}, user: {}", user.getId(), user);

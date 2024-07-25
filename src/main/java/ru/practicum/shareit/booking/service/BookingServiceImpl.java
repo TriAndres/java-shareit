@@ -84,8 +84,7 @@ public class BookingServiceImpl implements BookingService {
             default:
                 throw new IncorrectDataException("Incorrect data in approve method");
         }
-        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("There is no Booking with Id: " + bookingId)));
+        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId).get());
         bookingRepository.save(bookingToUpdate);
         return toBookingDto(bookingToUpdate);
     }
@@ -180,7 +179,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private UserDto checkingUserId(Long userId) {
-        if (userId < 1) {
+        if (userId  < 1) {
             throw new IncorrectDataException("There is no user with header-Id : " + userId);
         }
         return toUserDto(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("There is no user with id: " + userId)));

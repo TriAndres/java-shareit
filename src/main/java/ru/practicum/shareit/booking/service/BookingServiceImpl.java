@@ -179,7 +179,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private UserDto checkingUserId(Long userId) {
-        if (userId == -1) {
+        if (userId < 1) {
             throw new IncorrectDataException("There is no user with header-Id : " + userId);
         }
         return toUserDto(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("There is no user with id: " + userId)));

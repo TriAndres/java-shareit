@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.booking.dto.mapper.BookingMapper.*;
@@ -84,7 +85,8 @@ public class BookingServiceImpl implements BookingService {
             default:
                 throw new IncorrectDataException("Incorrect data in approve method");
         }
-        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId).get());
+        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new EntityNotFoundException("There is no Booking with Id: " + bookingId)));
         bookingRepository.save(bookingToUpdate);
         return toBookingDto(bookingToUpdate);
     }

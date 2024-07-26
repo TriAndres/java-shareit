@@ -17,9 +17,9 @@ import ru.practicum.shareit.item.dto.comment.CommentMapper;
 import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
-import ru.practicum.shareit.item.repository.ItemRepositoryDb;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.repository.UserRepositoryDb;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -36,8 +36,8 @@ import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUserDto;
 @RequiredArgsConstructor
 public class ItemServiceDbImpl implements ItemService {
 
-    private final UserRepositoryDb userRepository;
-    private final ItemRepositoryDb itemRepository;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
 

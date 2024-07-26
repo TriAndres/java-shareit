@@ -10,11 +10,11 @@ import java.util.Objects;
 
 @Entity
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @ToString
 @Builder
-@AllArgsConstructor
 @Table(name = "comments")
 public class Comment {
 

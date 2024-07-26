@@ -8,7 +8,7 @@ import ru.practicum.shareit.exception.EntityNotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.user.repository.UserRepositoryDb;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -20,7 +20,7 @@ import static ru.practicum.shareit.user.dto.mapper.UserMapper.*;
 @RequiredArgsConstructor
 public class UserServiceDbImpl implements UserService {
 
-    private final UserRepository userRepository;
+    private final UserRepositoryDb userRepository;
 
     @Override
     public UserDto create(UserDto userDto) {

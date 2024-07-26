@@ -13,9 +13,9 @@ import ru.practicum.shareit.exception.EntityNotFoundException;
 import ru.practicum.shareit.exception.IncorrectDataException;
 import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.item.repository.ItemRepositoryDb;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.user.repository.UserRepositoryDb;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,8 +32,8 @@ import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUserDto;
 public class BookingServiceImpl implements BookingService {
 
     private static final Sort SORT_BY_START_DESC = Sort.by(Sort.Direction.DESC, "start");
-    private final UserRepository userRepository;
-    private final ItemRepository itemRepository;
+    private final UserRepositoryDb userRepository;
+    private final ItemRepositoryDb itemRepository;
     private final BookingRepository bookingRepository;
 
     @Override

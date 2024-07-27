@@ -192,5 +192,4 @@ public class BookingServiceImpl implements BookingService {
             throw new UnsupportedStatusException(state);
         }
     }
-
 }

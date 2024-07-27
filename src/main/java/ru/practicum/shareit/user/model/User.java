@@ -4,7 +4,8 @@ import lombok.*;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.model.Item;
 
-import jakarta.persistence.*;
+
+import javax.persistence.*;
 import java.util.List;
 import java.util.Objects;
 

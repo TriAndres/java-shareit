@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Data
-public class BookingLiteDto {
+public class BookingIdDto {
 
     private Long id;
     private LocalDateTime start;

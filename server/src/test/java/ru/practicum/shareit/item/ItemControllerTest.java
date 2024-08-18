@@ -1,138 +1,221 @@
 package ru.practicum.shareit.item;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Pageable;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.comment.CommentDto;
-import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.validator.PageableValidator;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.exception.ErrorHandler;
+import ru.practicum.shareit.item.dto.AddCommentRqDto;
+import ru.practicum.shareit.item.dto.AddItemRqDto;
+import ru.practicum.shareit.item.dto.UpdateItemRqDto;
+import ru.practicum.shareit.item.model.Comment;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.CommentRepository;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.ItemRequestRepository;
+import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.UserRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class ItemControllerTest {
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-    @Autowired
-    ObjectMapper objectMapper;
+@ExtendWith(MockitoExtension.class)
+public class ItemControllerTest {
+    @Mock
+    private ItemRepository itemRepository;
+    @Mock
+    private CommentRepository commentRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private BookingRepository bookingRepository;
+    @Mock
+    private ItemRequestRepository requestRepository;
 
-    @Autowired
-    MockMvc mockMvc;
+    private ItemService service;
+    private ItemController controller;
 
-    @MockBean
-    ItemService itemService;
+    private final ObjectMapper mapper = new ObjectMapper();
 
-    @MockBean
-    PageableValidator pageableValidator;
+    private MockMvc mvc;
 
-    @SneakyThrows
+    private User owner;
+    private User requester;
+    private User booker;
+    private Item item;
+    private ItemRequest request;
+    private Booking lastBooking;
+    private Booking nextBooking;
+    private Comment comment;
+
+
+    @BeforeEach
+    void setUp() {
+        service = new ItemServiceImpl(itemRepository,
+                                      commentRepository,
+                                      userRepository,
+                                      bookingRepository,
+                                      requestRepository);
+        controller = new ItemController(service);
+        mvc = MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(ErrorHandler.class).build();
+
+        owner = new User(1L, "Owner", "owner@mail.com");
+        requester = new User(2L, "Requester", "requester@mail.com");
+        booker = new User(3L, "Booker", "booker@mail.com");
+        request = new ItemRequest(1L, "Request description", requester, LocalDateTime.now());
+        item = new Item(1L, "Item", "Item description", true, owner, request);
+        lastBooking = new Booking(1L,
+                                  LocalDateTime.now().minusDays(2),
+                                  LocalDateTime.now().minusDays(1),
+                                  BookingStatus.APPROVED,
+                                  booker,
+                                  item);
+        nextBooking = new Booking(2L,
+                                  LocalDateTime.now().plusDays(1),
+                                  LocalDateTime.now().plusDays(2),
+                                  BookingStatus.APPROVED,
+                                  booker,
+                                  item);
+        comment = new Comment(1L, "Comment", item, booker, LocalDateTime.now());
+    }
+
     @Test
-    void createItem() {
-        ItemDto itemToCreate = new ItemDto();
-        when(itemService.create(any(ItemDto.class), anyLong())).thenReturn(itemToCreate);
+    void addNewItem() throws Exception {
+        when(userRepository.findById(any())).thenReturn(Optional.of(owner));
+        when(requestRepository.findById(any())).thenReturn(Optional.of(request));
+        when(itemRepository.save(any())).thenReturn(item);
 
-        String result = mockMvc.perform(post("/items")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(itemToCreate)).header("X-Sharer-User-Id", 1L))
+        AddItemRqDto itemDto = new AddItemRqDto(item.getName(),
+                                                item.getDescription(),
+                                                item.getAvailable(),
+                                                request.getId());
+
+        mvc.perform(post("/items").content(mapper.writeValueAsString(itemDto))
+                            .header("X-Sharer-User-Id", 1L)
+                            .characterEncoding(StandardCharsets.UTF_8)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertEquals(objectMapper.writeValueAsString(itemToCreate), result);
+                .andExpect(jsonPath("$.id", is(item.getId()), Long.class))
+                .andExpect(jsonPath("$.name", is(item.getName())))
+                .andExpect(jsonPath("$.description", is(item.getDescription())));
     }
 
-
-    @SneakyThrows
     @Test
-    void updateItem() {
-        ItemDto itemToCreate = ItemDto.builder()
-                .id(1L)
-                .build();
-        ItemDto itemToUpdate = ItemDto.builder()
-                .id(2L)
-                .build();
-        when(itemService.update(any(ItemDto.class), anyLong())).thenReturn(itemToUpdate);
+    void findById() throws Exception {
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(bookingRepository.getLastBookings(any(Item.class),
+                                               any())).thenReturn(new PageImpl<>(List.of(lastBooking)));
+        when(bookingRepository.getNextBookings(any(Item.class),
+                                               any())).thenReturn(new PageImpl<>(List.of(nextBooking)));
+        when(commentRepository.findByItemOrderByCreatedDesc(item)).thenReturn(List.of(comment));
 
-        String result = mockMvc.perform(patch("/items/{itemId}", itemToCreate.getId())
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(itemToCreate))
-                        .header("X-Sharer-User-Id", 1L))
+        mvc.perform(get("/items/{id}", 1L).characterEncoding(StandardCharsets.UTF_8)
+                            .header("X-Sharer-User-Id", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertEquals(objectMapper.writeValueAsString(itemToUpdate), result);
+                .andExpect(jsonPath("$.id", is(item.getId()), Long.class))
+                .andExpect(jsonPath("$.name", is(item.getName())))
+                .andExpect(jsonPath("$.description", is(item.getDescription())));
     }
 
-    @SneakyThrows
     @Test
-    void getItemById() {
-        long itemId = 0L;
-        mockMvc.perform(get("/items/{itemId}", itemId)
-                        .header("X-Sharer-User-Id", 1L))
-                .andExpect(status().isOk());
+    void findAll() throws Exception {
+        when(itemRepository.findByOwnerId(any(), any())).thenReturn(List.of(item));
+        when(bookingRepository.findNearestPrevBookingsByItemOwner(any(), any())).thenReturn(List.of(lastBooking));
+        when(bookingRepository.findNearestNextBookingsByItemOwner(any(), any())).thenReturn(List.of(nextBooking));
+        when(commentRepository.findCommentsForItemsOfOwner(any())).thenReturn(List.of(comment));
 
-        verify(itemService, times(1)).getItemById(anyLong(), anyLong());
-    }
-
-    @SneakyThrows
-    @Test
-    void getUserItems() {
-        mockMvc.perform(get("/items")
-                        .param("from", "1")
-                        .param("size", "1")
-                        .header("X-Sharer-User-Id", "1"))
-                .andExpect(status().isOk());
-        doNothing().when(pageableValidator).checkingPageableParams(anyInt(), anyInt());
-
-        verify(itemService, times(1)).getItemsByUserId(anyLong(), any(Pageable.class));
-
-    }
-
-    @SneakyThrows
-    @Test
-    void getItemsBySearch_whenCorrectPage_thenReturnOk() {
-        mockMvc.perform(get("/items/search")
-                        .param("text", "text")
-                        .param("from", "1")
-                        .param("size", "1")
-                        .header("X-Sharer-User-Id", 1L))
-                .andExpect(status().isOk());
-        doNothing().when(pageableValidator).checkingPageableParams(anyInt(), anyInt());
-
-        verify(itemService, times(1)).getItemsBySearch(anyString(), any(Pageable.class));
-    }
-
-
-    @SneakyThrows
-    @Test
-    void createCommentToItem() {
-        long itemId = 1L;
-        CommentDto commentToCreate = new CommentDto();
-        when(itemService.addCommentToItem(anyLong(), anyLong(), any(CommentDto.class))).thenReturn(commentToCreate);
-
-        String result = mockMvc.perform(post("/items/{itemId}/comment", itemId)
-                        .contentType("application/json")
-                        .header("X-Sharer-User-Id", "1")
-                        .content(objectMapper.writeValueAsString(commentToCreate)))
+        mvc.perform(get("/items").characterEncoding(StandardCharsets.UTF_8)
+                            .header("X-Sharer-User-Id", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(item.getId()), Long.class))
+                .andExpect(jsonPath("$[0].name", is(item.getName())))
+                .andExpect(jsonPath("$[0].description", is(item.getDescription())));
+    }
 
-        assertEquals(objectMapper.writeValueAsString(commentToCreate), result);
+    @Test
+    void search() throws Exception {
+        when(itemRepository.findAvailableItemsByNameAndDescriptionIgnoreCase(any())).thenReturn(List.of(item));
 
+        mvc.perform(get("/items/search").param("text", "Item")
+                            .characterEncoding(StandardCharsets.UTF_8)
+                            .header("X-Sharer-User-Id", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(item.getId()), Long.class))
+                .andExpect(jsonPath("$[0].name", is(item.getName())))
+                .andExpect(jsonPath("$[0].description", is(item.getDescription())));
+    }
+
+    @Test
+    void updateItemById() throws Exception {
+        UpdateItemRqDto updateItemDto = new UpdateItemRqDto("Updated Item", "Updated description", true);
+        Item updatedItem = new Item(1L,
+                                    updateItemDto.getName(),
+                                    updateItemDto.getDescription(),
+                                    updateItemDto.getAvailable(),
+                                    owner,
+                                    request);
+
+        when(itemRepository.findById(any())).thenReturn(Optional.of(item));
+        when(itemRepository.save(any())).thenReturn(updatedItem);
+
+        mvc.perform(patch("/items/{id}", 1L).content(mapper.writeValueAsString(updateItemDto))
+                            .header("X-Sharer-User-Id", 1L)
+                            .characterEncoding(StandardCharsets.UTF_8)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(updatedItem.getId()), Long.class))
+                .andExpect(jsonPath("$.name", is(updatedItem.getName())))
+                .andExpect(jsonPath("$.description", is(updatedItem.getDescription())));
+    }
+
+    @Test
+    void addNewComment() throws Exception {
+        AddCommentRqDto addCommentRqDto = new AddCommentRqDto("Comment");
+        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(any(),
+                                                                            any(),
+                                                                            any(),
+                                                                            any())).thenReturn(List.of(lastBooking));
+        when(commentRepository.save(any())).thenReturn(comment);
+
+        mvc.perform(post("/items/{id}/comment", 1L).content(mapper.writeValueAsString(addCommentRqDto))
+                            .header("X-Sharer-User-Id", 1L)
+                            .characterEncoding(StandardCharsets.UTF_8)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(comment.getId()), Long.class))
+                .andExpect(jsonPath("$.text", is(comment.getText())));
     }
 }

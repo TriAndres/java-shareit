@@ -1,118 +1,165 @@
 package ru.practicum.shareit.booking;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageRequest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.shareit.booking.dto.BookingDto;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.practicum.shareit.booking.dto.AddBookingRqDto;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.service.BookingService;
-import ru.practicum.shareit.validator.PageableValidator;
+import ru.practicum.shareit.exception.ErrorHandler;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.UserRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class BookingControllerTest {
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-    @Autowired
-    ObjectMapper objectMapper;
+@ExtendWith(MockitoExtension.class)
+public class BookingControllerTest {
+    private BookingService service;
+    private BookingController controller;
 
-    @Autowired
-    MockMvc mockMvc;
+    @Mock
+    private BookingRepository bookingRepository;
+    @Mock
+    private ItemRepository itemRepository;
+    @Mock
+    private UserRepository userRepository;
 
-    @MockBean
-    BookingService bookingService;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private MockMvc mvc;
 
-    @MockBean
-    PageableValidator pageableValidator;
+    private User owner;
+    private User booker;
+    private User requester;
+    private ItemRequest request;
+    private Item item;
+    private Booking booking;
 
-    @SneakyThrows
+    @BeforeEach
+    void setUp() {
+        service = new BookingServiceImpl(bookingRepository, itemRepository, userRepository);
+        controller = new BookingController(service);
+        mvc = MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(ErrorHandler.class).build();
+
+        mapper.registerModule(new JavaTimeModule());
+
+        owner = new User(1L, "Owner", "owner@mail.com");
+        booker = new User(2L, "Booker", "booker@mail.com");
+        item = new Item(1L, "Item", "Item description", true, owner, request);
+        requester = new User(2L, "Requester", "requester@mail.com");
+        request = new ItemRequest(1L, "Request description", requester, LocalDateTime.now());
+        booking = new Booking(1L,
+                              LocalDateTime.now().minusDays(2),
+                              LocalDateTime.now().minusDays(1),
+                              BookingStatus.APPROVED,
+                              booker,
+                              item);
+    }
+
     @Test
-    void createBooking() {
-        BookingDto bookingToCreate = new BookingDto();
-        when(bookingService.addBooking(any(BookingDto.class), anyLong())).thenReturn(bookingToCreate);
+    void addNewBooking() throws Exception {
+        when(itemRepository.findByIdAndOwnerIdNot(any(), any())).thenReturn(Optional.of(item));
+        when(userRepository.findById(any())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findByItemIdAndActiveInPeriod(any(), any(), any())).thenReturn(new ArrayList<>());
+        when(bookingRepository.save(any())).thenReturn(booking);
 
-        String result = mockMvc.perform(post("/bookings")
-                        .content(objectMapper.writeValueAsString(bookingToCreate))
-                        .header("X-Sharer-User-Id", 1L)
-                        .contentType("application/json"))
+        AddBookingRqDto bookingDto = new AddBookingRqDto(LocalDateTime.now().minusDays(2),
+                                                         LocalDateTime.now().minusDays(1),
+                                                         item.getId());
+
+        mvc.perform(post("/bookings").content(mapper.writeValueAsString(bookingDto))
+                            .header("X-Sharer-User-Id", booker.getId())
+                            .characterEncoding(StandardCharsets.UTF_8)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertEquals(objectMapper.writeValueAsString(bookingToCreate), result);
+                .andExpect(jsonPath("$.id", is(booking.getId()), Long.class))
+                .andExpect(jsonPath("$.status", is(booking.getStatus().name())));
     }
 
-    @SneakyThrows
     @Test
-    void approveBooking() {
-        BookingDto bookingToCreate = new BookingDto();
-        bookingToCreate.setId(1L);
-        BookingDto updatedBooking = BookingDto.builder()
-                .id(1L)
-                .status(BookingStatus.APPROVED)
-                .build();
-        when(bookingService.approveBooking(anyLong(), anyLong(), anyString())).thenReturn(updatedBooking);
+    void updateStatus() throws Exception {
+        Booking updatedBooking = new Booking(1L,
+                                             LocalDateTime.now().minusDays(2),
+                                             LocalDateTime.now().minusDays(1),
+                                             BookingStatus.REJECTED,
+                                             booker,
+                                             item);
 
-        String result = mockMvc.perform(patch("/bookings/{bookingId}", bookingToCreate.getId())
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(bookingToCreate))
-                        .header("X-Sharer-User-Id", 1L)
-                        .param("approved", "true"))
+        when(bookingRepository.findById(any())).thenReturn(Optional.of(booking));
+        when(bookingRepository.save(any())).thenReturn(updatedBooking);
+
+        mvc.perform(patch("/bookings/{id}", booking.getId()).param("approved", "false")
+                            .header("X-Sharer-User-Id", owner.getId())
+                            .characterEncoding(StandardCharsets.UTF_8)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertEquals(objectMapper.writeValueAsString(updatedBooking), result);
+                .andExpect(jsonPath("$.id", is(updatedBooking.getId()), Long.class))
+                .andExpect(jsonPath("$.status", is(updatedBooking.getStatus().name())));
     }
 
-    @SneakyThrows
     @Test
-    void getAllBookingsForUser() {
-        mockMvc.perform(get("/bookings")
-                        .param("from", "1")
-                        .param("size", "1")
-                        .param("state", "ALL")
-                        .header("X-Sharer-User-Id", "1"))
-                .andExpect(status().isOk());
-        doNothing().when(pageableValidator).checkingPageableParams(1, 1);
+    void findById() throws Exception {
+        when(bookingRepository.findById(any())).thenReturn(Optional.of(booking));
 
-        verify(bookingService, times(1)).getAllBookingsByUserId(1L, "ALL", PageRequest.of(1, 1));
+        mvc.perform(get("/bookings/{id}", booking.getId()).characterEncoding(StandardCharsets.UTF_8)
+                            .header("X-Sharer-User-Id", booker.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(booking.getId()), Long.class))
+                .andExpect(jsonPath("$.status", is(booking.getStatus().name())));
     }
 
-    @SneakyThrows
     @Test
-    void getAllBookingsForOwner() {
-        mockMvc.perform(get("/bookings/owner")
-                        .param("from", "1")
-                        .param("size", "1")
-                        .param("state", "ALL")
-                        .header("X-Sharer-User-Id", "1"))
-                .andExpect(status().isOk());
-        doNothing().when(pageableValidator).checkingPageableParams(1, 1);
-
-        verify(bookingService, times(1)).getAllBookingsByOwnerId(1L, "ALL", PageRequest.of(1, 1));
+    void getUserBookings() throws Exception {
+        when(bookingRepository.findByBookerIdAndState(any(), any())).thenReturn(List.of(booking));
+        mvc.perform(get("/bookings").characterEncoding(StandardCharsets.UTF_8)
+                            .header("X-Sharer-User-Id", booker.getId())
+                            .param("state", "ALL")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(booking.getId()), Long.class))
+                .andExpect(jsonPath("$[0].status", is(booking.getStatus().name())));
     }
 
-    @SneakyThrows
     @Test
-    void getInfoForBooking() {
-        long bookingId = 0L;
-        mockMvc.perform(get("/bookings/{bookingId}", bookingId)
-                        .header("X-Sharer-User-Id", 1L))
-                .andExpect(status().isOk());
-
-        verify(bookingService, times(1)).getBookingInfo(anyLong(), anyLong());
+    void getBookingsByItemsOwner() throws Exception {
+        when(bookingRepository.findByOwnerIdAndState(any(), any())).thenReturn(List.of(booking));
+        mvc.perform(get("/bookings/owner").characterEncoding(StandardCharsets.UTF_8)
+                            .header("X-Sharer-User-Id", owner.getId())
+                            .param("state", "ALL")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(booking.getId()), Long.class))
+                .andExpect(jsonPath("$[0].status", is(booking.getStatus().name())));
     }
 }

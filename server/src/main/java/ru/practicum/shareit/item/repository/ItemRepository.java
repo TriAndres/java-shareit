@@ -1,24 +1,34 @@
 package ru.practicum.shareit.item.repository;
 
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.ItemRequest;
 
 import java.util.List;
+import java.util.Optional;
 
-@Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
+    List<Item> findByOwnerId(Long ownerId, Sort sort);
 
+    Optional<Item> findByIdAndOwnerIdNot(Long id, Long ownerId);
 
-    List<Item> findByOwner_Id(Long ownerId, Pageable page);
+    @Query("""
+            select it
+            from Item as it
+            where it.available and (
+               it.name ilike concat('%', ?1, '%')
+               or
+               it.description ilike concat('%', ?1, '%')
+            )
+            order by it.id
+            """)
+    List<Item> findAvailableItemsByNameAndDescriptionIgnoreCase(String searchText);
 
-    @Query("select i from Item i where i.owner.id = :ownerId")
-    List<Item> findByOwner_Id_WithoutPageable(Long ownerId);
+    List<Item> findByRequestRequesterId(Long userId, Sort id);
 
-    @Query("select i from Item i where i.available = true AND (upper(i.name) like upper(concat('%', ?1, '%')) OR " +
-            "upper (i.description) like upper(concat('%', ?1, '%')))")
-    List<Item> search(String text, Pageable page);
+    List<Item> findByRequestId(Long requestId, Sort sort);
 
+    List<Item> findByRequestIn(List<ItemRequest> requests, Sort by);
 }

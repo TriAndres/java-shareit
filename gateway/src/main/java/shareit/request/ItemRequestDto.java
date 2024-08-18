@@ -1,5 +1,6 @@
 package shareit.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ import java.util.Collection;
 public class ItemRequestDto {
 
     private Long id;
+    @NotBlank
     private String description;
     private UserDto requester;
     private LocalDateTime created;

@@ -5,13 +5,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.*;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import shareit.client.BaseClient;
 
 
-@Service
+@Component
 public class UserClient extends BaseClient {
 
     private static final String API_PREFIX = "/users";
